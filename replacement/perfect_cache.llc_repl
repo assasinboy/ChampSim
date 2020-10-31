@@ -1,0 +1,365 @@
+#include <iostream>
+#include <cstring>
+#include <vector>
+#include <unordered_map>
+#include <algorithm>
+#include <string>
+#include <unistd.h>
+#include <fstream>
+#include <bzlib.h>
+#include "perfect_cache.h"
+#include <utility>
+#include <set>
+#include <math.h>
+#include <iterator>
+#include <cctype>
+#include <cstdlib>
+#include <stdint.h>
+#include <assert.h>
+#include <bitset>
+#include <utility>
+#include <list>
+#include <iterator>
+#include <getopt.h>
+#include "cache.h"
+
+using namespace std;
+
+/*
+  What's being stored in the last_seen? Pruning doesn't catch anything.
+  But looking it up doesn't either...
+  Happens in insert_time_block. Should not tack on overlap and increse lines_filled.
+*/
+
+struct time_block{
+  unsigned long start_time, end_time, lines_filled;
+};
+
+class MapType{};
+class streamMap : public MapType{
+public:
+  unordered_map<streamcluster, unsigned long, KeyHash, StructEqual> Map;
+};
+class blackMap : public MapType{
+public:
+  unordered_map<blackscholes, unsigned long, KeyHash, StructEqual> Map;
+};
+class cannealMap : public MapType{
+public:
+  unordered_map<canneal, unsigned long, KeyHash, StructEqual> Map;
+};
+class bodyMap : public MapType{
+public:
+  unordered_map<bodytrack, unsigned long, KeyHash, StructEqual> Map;
+};
+class traceMap : public MapType{
+public:
+  unordered_map<trace, unsigned long, KeyHash, StructEqual> Map;
+};
+
+
+unsigned int c_size;
+void* input_seen;
+int size_data;
+char buf[8] = "";
+unsigned long num_inputs=0;
+vector<time_block> cache;
+vector<long> fill_points;
+bool prune;
+bool first_prune = false, prune_needed = false;
+long fill_point = 0, hit_count = 0;
+
+
+static void coalesce();
+//static void pPrintInput(streamcluster input);
+static void pPrintVector();
+static void pPrintBlock(struct time_block b);
+
+
+template <class T>  
+void prune_blocks(T* input_seen){
+  size_t last_fill = fill_points.back(), index = 0;
+  first_prune = true;
+  while ( cache[0].end_time <= last_fill ) cache.erase(cache.begin()); 
+  auto finder = input_seen->Map.begin();
+  while ( finder != input_seen->Map.end() ){
+    if ( finder->second < last_fill ) finder = input_seen->Map.erase(finder);
+    else finder++;
+  }
+}
+
+
+template <class T>  
+void insert_time_slot(time_block block, T* input_seen){
+
+  bool found_split = false, fill_captured = false;
+  vector<time_block> copy_cache = cache;
+  size_t offset = 0, index = 0;
+  if ( block.start_time < fill_point ) {
+    return;
+  }
+  hit_count++;
+  sort(fill_points.begin(), fill_points.end());
+  if ( cache.empty() || block.start_time > cache[cache.size() - 1].end_time ){
+    cache.push_back(block);
+    if (c_size == 1) {
+      fill_point = cache[cache.size() - 1].end_time;
+      fill_points.push_back(fill_point);
+      if (prune) prune_blocks<T>(input_seen);
+    }
+    return;
+  }
+  while (cache[index].start_time < fill_point) index += 1; 
+  found_split =  block.start_time < cache[index].start_time; // 1 when block start time before cache start time
+  while( index < cache.size() + offset ){
+    if ( found_split ) {  
+      cache[index].lines_filled++;
+    } // already found split and just add 1 to the rest of the vector
+    else if ( block.start_time == cache[index].end_time ) {  
+      found_split = true; } // don't split block, just continue
+    else if ( cache[index].start_time < block.start_time && cache[index].end_time > block.start_time ){ // found which block needs to be split
+      found_split = true;
+      struct time_block new_block = {block.start_time, cache[index].end_time, cache[index].lines_filled + 1};
+      assert(new_block.lines_filled <= c_size);
+      cache.insert(cache.begin()+index+1, new_block);
+      cache[index].end_time = block.start_time;
+      index++; offset++;
+    }
+    assert(cache[index].lines_filled <= c_size);
+    if (cache[index].lines_filled == c_size) {
+      fill_point = cache[index].end_time;
+      if (find(fill_points.begin(), fill_points.end(), fill_point) == fill_points.end()) {
+	if (!fill_captured) fill_captured = true;
+        else fill_points.pop_back();
+	fill_points.push_back(fill_point);
+      }
+      prune_needed = true;
+    }
+    index++;
+  }
+  struct time_block end_block = {cache[cache.size()-1].end_time, block.end_time, 1};
+  cache.push_back(end_block);
+  if ( cache[0].start_time > block.start_time){
+    struct time_block start_block = {block.start_time, cache[0].start_time, 1};
+    cache.insert(cache.begin(), start_block);
+    } //insert time_block before first block
+  if( prune && prune_needed ) { prune_blocks<T>(input_seen); prune_needed = false; }
+  coalesce();
+}
+
+
+/*TODO(dlw0460): write function definition. */
+void coalesce(){
+  size_t index = 0;
+  while ( index < cache.size()-1 ){
+    if ( cache[index].lines_filled == cache[index+1].lines_filled &&
+	 cache[index].end_time == cache[index+1].start_time+1){
+      cache[index].end_time = cache[index+1].end_time;
+      cache.erase(cache.begin()+index+1);
+    }
+    else index++;
+  }
+}
+
+/*void pPrintInput(steamcluster inp){
+  if (input_type == "streamcluster")
+    cout << "Input: " << inp.input1 << " " << inp.input2 << " " << inp.input3 << endl;
+    }*/
+
+template <class T, class U>  
+void run_cache(T* inp, U* input_seen, unsigned long index){
+  auto finder = input_seen->Map.find(*inp);
+  if(finder != input_seen->Map.end()){
+    if (index == 130) cout << finder->second << endl;
+    struct time_block new_block = {finder->second, index+1, 1};
+    insert_time_slot<U>(new_block, input_seen);
+    input_seen->Map[*inp] = index+1;
+  }
+  else input_seen->Map[*inp] = index;
+}
+
+void pPrintBlock(struct time_block b){
+  cout << "\nPrinting New Block" << endl;
+  cout << "start time: " << b.start_time<< endl;
+  cout << "end time: " << b.end_time << endl;
+  cout << "lines filled: " << b.lines_filled << endl;
+}
+
+void pPrintVector(){
+  vector<time_block> v = cache;
+  cout << "The elements of this vector are:\n";
+  for(size_t index = 0; index < v.size(); index++){
+    cout << "start time: " << v[index].start_time << endl;
+    cout << "end time: " << v[index].end_time << endl;
+    cout << "cache lines filled: " << v[index].lines_filled << "\n\n";
+  }
+}
+
+
+void CACHE::llc_replacement_final_stats(int num_inputs){
+  vector<time_block> v = cache;
+  size_t num_fills = 0;
+  for(size_t index = 0; index < fill_points.size(); index++){
+    num_fills++;
+    }
+  cout << endl;
+  cout<<"Input Size: "<<num_inputs<<endl;
+  cout << "Cache size: " << c_size<<endl;
+  cout<<"Hit Count: "<<hit_count<<endl;
+  cout << "Cache filled " << fill_points.size() << " times." << endl; 
+}
+
+
+static void usage (char * prog)
+{
+    printf("Usage: %s [options]\n", prog);
+    printf("\nOptions:\n");
+    
+    printf("  -h, --help : display this message\n");
+    printf("  -i, input format [streamcluster,bodytrack,blackscholes,canneal] (default=streamcluster)\n");
+    printf("  -f, path to input file\n");
+    printf("  -p, prune [0,1] (default=1)\n");
+    printf("  -c, cache_size (default=2)\n");
+    printf("\n");
+}
+
+
+template <class T, class U>  
+void readInput(char buf[8],void* input_seen ,int num_inputs){ 
+  T read_data;
+  memcpy(&read_data, buf, sizeof(T));
+  run_cache<T,U>(&read_data, reinterpret_cast<U*>(input_seen), num_inputs);
+}
+
+void CACHE::initialize(char buf[8]) {
+  size_data = sizeof(trace);
+  input_seen = new traceMap;
+  readInput<trace,traceMap>(buf, input_seen, num_inputs);
+  num_inputs++;
+  }
+/*
+int main(int argc, char **argv){
+  int c;
+  
+  BZFILE* bzf;
+  FILE*   fp;
+  int     bzerror;
+  char    buf[8];
+
+  int size_data;
+  c_size = 2;
+  prune = 1;
+  string input_type= ""; 
+  string filepath = "";
+  void* input_seen;
+  while (1) {
+
+        int optidx = 0;
+
+        static struct option lopts[] = {
+            {"prune", required_argument, 0, 'p'},
+            {"cache_size", required_argument, 0, 'c'},
+            {"inputType", required_argument, 0, 'i'},
+            {"filePath", required_argument, 0, 'f'},
+            {"help", no_argument, 0, 'h'},
+            {0, 0, 0, 0}
+        };
+
+        c = getopt_long(argc, argv, "p:i:h:c:f:", lopts, &optidx);
+
+        if (c == -1) {
+            break;
+        }
+
+        switch (c) {
+            case 'i':
+                input_type = optarg;
+                break;
+            case 'f':
+                filepath = optarg;
+                break;
+            case 'c':
+                c_size = atoi(optarg);
+                break;
+            case 'p':
+                prune = atoi(optarg);
+                break;
+            case 'h':
+                usage(argv[0]);
+                exit(EXIT_SUCCESS);
+            case '?':
+                break;
+            default:
+                printf("?? getopt returned character code 0%o ??\n", c);
+        }
+    }
+
+  size_data = sizeof(trace);
+  input_seen = new traceMap;
+  /*
+  if(input_type == "blackscholes"){
+    size_data = sizeof(blackscholes);
+    input_seen = new blackMap;
+  }
+  else if (input_type == "bodytrack"){
+    size_data = sizeof(bodytrack);
+    input_seen = new bodyMap;
+  }
+  else if (input_type == "canneal"){
+    size_data = sizeof(canneal);
+    input_seen = new cannealMap;
+  }
+  else if (input_type == "streamcluster"){
+    size_data = sizeof(streamcluster);
+    input_seen = new streamMap;
+  }
+   
+  else{
+    cout << "bad input type: \'"<< input_type << "\'" << endl;
+    exit(-1);
+  }
+  */
+
+/*
+  if(filepath == ""){ 
+    cout << "Please enter -f filePath"<< endl;
+    exit(1);}
+  else{
+
+    fp = fopen(filepath.c_str(), "r");
+    if (fp == NULL) { 
+      cout << "file failed to open " << filepath << endl;
+      exit(1);
+    }
+    bzf = BZ2_bzReadOpen (&bzerror, fp, 0, 0, NULL, 0);
+    unsigned long num_inputs = 0;
+    while(bzerror != BZ_STREAM_END){
+      BZ2_bzRead ( &bzerror, bzf, buf, sizeof(size_data) );
+      /*
+      if(input_type == "blackscholes"){
+        readInput<blackscholes, blackMap>(buf, input_seen, num_inputs);
+      }
+      else if (input_type == "bodytrack"){
+       readInput<bodytrack, bodyMap>(buf, input_seen, num_inputs);
+      }
+      else if (input_type == "canneal"){
+        readInput<canneal, cannealMap>(buf, input_seen, num_inputs);
+      }
+      else if (input_type == "streamcluster"){
+        readInput<streamcluster, streamMap>(buf, input_seen, num_inputs);
+      }
+      */
+  /*
+      readInput<trace,traceMap>(buf, input_seen, num_inputs);
+      num_inputs++;
+      // if (num_inputs>=1000) break;
+    }
+    BZ2_bzReadClose ( &bzerror, bzf);
+    fclose(fp);
+    pPrintFillPoints(num_inputs);
+  }
+  
+  
+  return 0;
+}
+*/

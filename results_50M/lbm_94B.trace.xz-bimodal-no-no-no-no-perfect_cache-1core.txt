@@ -1,0 +1,13 @@
+
+*** ChampSim Multicore Out-of-Order Simulator ***
+
+Warmup Instructions: 5000000
+Simulation Instructions: 50000000
+Number of CPUs: 1
+LLC sets: 2048
+LLC ways: 16
+Off-chip DRAM Size: 4096 MB Channels: 1 Width: 64-bit Data Rate: 3200 MT/s
+
+CPU 0 runs /nfs-scratch/usk6037/ChampSim/traces/lbm_94B.trace.xz
+0
+CPU 0 Bimodal branch predictor

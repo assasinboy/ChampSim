@@ -1,0 +1,86 @@
+
+*** ChampSim Multicore Out-of-Order Simulator ***
+
+Warmup Instructions: 5000000
+Simulation Instructions: 50000000
+Number of CPUs: 1
+LLC sets: 2048
+LLC ways: 16
+Off-chip DRAM Size: 4096 MB Channels: 1 Width: 64-bit Data Rate: 3200 MT/s
+
+CPU 0 runs /nfs-scratch/usk6037/ChampSim/traces/sphinx3_883B.trace.xz
+CPU 0 Bimodal branch predictor
+Initialize Hawkeye state
+
+Warmup complete CPU 0 instructions: 5000001 cycles: 1732876 (Simulation time: 0 hr 0 min 27 sec) 
+
+Heartbeat CPU 0 instructions: 10000001 cycles: 10219352 heartbeat IPC: 0.978536 cumulative IPC: 0.589173 (Simulation time: 0 hr 0 min 52 sec) 
+Heartbeat CPU 0 instructions: 20000002 cycles: 26295059 heartbeat IPC: 0.622057 cumulative IPC: 0.610695 (Simulation time: 0 hr 2 min 2 sec) 
+Heartbeat CPU 0 instructions: 30000000 cycles: 42297761 heartbeat IPC: 0.624894 cumulative IPC: 0.616297 (Simulation time: 0 hr 3 min 21 sec) 
+Heartbeat CPU 0 instructions: 40000003 cycles: 58065891 heartbeat IPC: 0.634191 cumulative IPC: 0.621305 (Simulation time: 0 hr 4 min 19 sec) 
+Heartbeat CPU 0 instructions: 50000000 cycles: 72926391 heartbeat IPC: 0.672925 cumulative IPC: 0.63208 (Simulation time: 0 hr 5 min 0 sec) 
+Finished CPU 0 instructions: 50000001 cycles: 78106235 cumulative IPC: 0.640154 (Simulation time: 0 hr 5 min 25 sec) 
+
+ChampSim completed all CPUs
+
+Region of Interest Statistics
+
+CPU 0 cumulative IPC: 0.640154 instructions: 50000001 cycles: 78106235
+L1D TOTAL     ACCESS:    7542335  HIT:    6585093  MISS:     957242
+L1D LOAD      ACCESS:    6226333  HIT:    5326497  MISS:     899836
+L1D RFO       ACCESS:    1316002  HIT:    1258596  MISS:      57406
+L1D PREFETCH  ACCESS:          0  HIT:          0  MISS:          0
+L1D WRITEBACK ACCESS:          0  HIT:          0  MISS:          0
+L1D PREFETCH  REQUESTED:          0  ISSUED:          0  USEFUL:          0  USELESS:          0
+L1D AVERAGE MISS LATENCY: 104.989 cycles
+L1I TOTAL     ACCESS:    8216649  HIT:    8215825  MISS:        824
+L1I LOAD      ACCESS:    8216649  HIT:    8215825  MISS:        824
+L1I RFO       ACCESS:          0  HIT:          0  MISS:          0
+L1I PREFETCH  ACCESS:          0  HIT:          0  MISS:          0
+L1I WRITEBACK ACCESS:          0  HIT:          0  MISS:          0
+L1I PREFETCH  REQUESTED:          0  ISSUED:          0  USEFUL:          0  USELESS:          0
+L1I AVERAGE MISS LATENCY: 169.942 cycles
+L2C TOTAL     ACCESS:    1048013  HIT:     321812  MISS:     726201
+L2C LOAD      ACCESS:     900658  HIT:     224778  MISS:     675880
+L2C RFO       ACCESS:      57397  HIT:       7200  MISS:      50197
+L2C PREFETCH  ACCESS:          0  HIT:          0  MISS:          0
+L2C WRITEBACK ACCESS:      89958  HIT:      89834  MISS:        124
+L2C PREFETCH  REQUESTED:          0  ISSUED:          0  USEFUL:          0  USELESS:          0
+L2C AVERAGE MISS LATENCY: 117.373 cycles
+LLC TOTAL     ACCESS:     797912  HIT:     277476  MISS:     520436
+LLC LOAD      ACCESS:     675880  HIT:     213087  MISS:     462793
+LLC RFO       ACCESS:      50197  HIT:      15274  MISS:      34923
+LLC PREFETCH  ACCESS:          0  HIT:          0  MISS:          0
+LLC WRITEBACK ACCESS:      71835  HIT:      49115  MISS:      22720
+LLC PREFETCH  REQUESTED:          0  ISSUED:          0  USEFUL:          0  USELESS:          0
+LLC AVERAGE MISS LATENCY: 120.354 cycles
+Major fault: 0 Minor fault: 3923
+OPTgen demand accesses: 12532
+OPTgen prefetch accesses: 0
+OPTgen hits: 5162
+OPTgen hit rate: 41.1906
+Number of evictions: 591166
+Number of cache-friendly evictions: 122450
+
+
+
+DRAM Statistics
+ CHANNEL 0
+ RQ ROW_BUFFER_HIT:     322295  ROW_BUFFER_MISS:     175420
+ DBUS_CONGESTED:      64475
+ WQ ROW_BUFFER_HIT:      25069  ROW_BUFFER_MISS:      11318  FULL:          0
+
+ AVG_CONGESTED_CYCLE: 6
+
+CPU 0 Branch Prediction Accuracy: 94.3536% MPKI: 5.56274 Average ROB Occupancy at Mispredict: 127.629
+
+Branch types
+NOT_BRANCH: 45073873 90.1477%
+BRANCH_DIRECT_JUMP: 70649 0.141298%
+BRANCH_INDIRECT: 380 0.00076%
+BRANCH_CONDITIONAL: 4606862 9.21372%
+BRANCH_DIRECT_CALL: 123470 0.24694%
+BRANCH_INDIRECT_CALL: 547 0.001094%
+BRANCH_RETURN: 124017 0.248034%
+BRANCH_OTHER: 0 0%
+
