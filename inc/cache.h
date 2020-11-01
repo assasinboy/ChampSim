@@ -89,6 +89,7 @@ class CACHE : public MEMORY {
     uint32_t MAX_READ, MAX_FILL;
     uint32_t reads_available_this_cycle;
     uint8_t cache_type;
+    uint64_t perfect_cache_entry;
 
     // prefetch stats
     uint64_t pf_requested,
@@ -110,6 +111,7 @@ class CACHE : public MEMORY {
              roi_access[NUM_CPUS][NUM_TYPES],
              roi_hit[NUM_CPUS][NUM_TYPES],
              roi_miss[NUM_CPUS][NUM_TYPES];
+             //create an additional data struct
 
     uint64_t total_miss_latency;
     
@@ -188,7 +190,7 @@ class CACHE : public MEMORY {
          handle_read(),
          handle_prefetch(),
          handle_trace(),
-         initialize(char buf[8]);
+         initialize(uint64_t entry);
 
 
     void add_mshr(PACKET *packet),

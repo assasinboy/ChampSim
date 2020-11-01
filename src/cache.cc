@@ -34,7 +34,7 @@ void CACHE::handle_fill()
 
             // update replacement policy
             if (cache_type == IS_LLC) {
-               // llc_update_replacement_state(fill_cpu, set, way, MSHR.entry[mshr_index].full_addr, MSHR.entry[mshr_index].ip, 0, MSHR.entry[mshr_index].type, 0);
+                //llc_update_replacement_state(fill_cpu, set, way, MSHR.entry[mshr_index].full_addr, MSHR.entry[mshr_index].ip, 0, MSHR.entry[mshr_index].type, 0);
 
             } 
             else
@@ -128,8 +128,8 @@ void CACHE::handle_fill()
 
         if (do_fill){
             // update prefetcher
-	  if (cache_type == IS_L1I)
-	    l1i_prefetcher_cache_fill(fill_cpu, ((MSHR.entry[mshr_index].ip)>>LOG2_BLOCK_SIZE)<<LOG2_BLOCK_SIZE, set, way, (MSHR.entry[mshr_index].type == PREFETCH) ? 1 : 0, ((block[set][way].ip)>>LOG2_BLOCK_SIZE)<<LOG2_BLOCK_SIZE);
+	    if (cache_type == IS_L1I)
+	       l1i_prefetcher_cache_fill(fill_cpu, ((MSHR.entry[mshr_index].ip)>>LOG2_BLOCK_SIZE)<<LOG2_BLOCK_SIZE, set, way, (MSHR.entry[mshr_index].type == PREFETCH) ? 1 : 0, ((block[set][way].ip)>>LOG2_BLOCK_SIZE)<<LOG2_BLOCK_SIZE);
 	    if (cache_type == IS_L1D)
 	      l1d_prefetcher_cache_fill(MSHR.entry[mshr_index].full_addr, set, way, (MSHR.entry[mshr_index].type == PREFETCH) ? 1 : 0, block[set][way].address<<LOG2_BLOCK_SIZE,
 					MSHR.entry[mshr_index].pf_metadata);
@@ -1046,8 +1046,8 @@ void CACHE::handle_prefetch()
 
 void CACHE::handle_trace() 
 {
-    
-    uint32_t index = ooo_cpu[0].IFETCH_BUFFER.head;
+   //cout << "is it getting to handle_trace?" << endl;
+    uint32_t index;
  
     for(uint32_t i=0; i<ooo_cpu[0].IFETCH_BUFFER.SIZE; i++)
     {
@@ -1055,10 +1055,13 @@ void CACHE::handle_trace()
         {
             continue;
         }
-        memcpy(buf,(void *)ooo_cpu[0].IFETCH_BUFFER.entry[index+i].ip,8);
-        initialize(buf);
+        index = ooo_cpu[0].IFETCH_BUFFER.head;
+        perfect_cache_entry = ooo_cpu[0].IFETCH_BUFFER.entry[index+i].ip;
+        initialize(perfect_cache_entry);
+        //ooo_cpu[0].IFETCH_BUFFER.remove_queue(&ooo_cpu[0].IFETCH_BUFFER.entry[index+i]);
         //readInput(buf[8], int num_inputs)
     }
+    update_fill_cycle();
     //pPrintFillPoints();
     //IFETCH_BUFFER.entry[head]
     //memcpy()

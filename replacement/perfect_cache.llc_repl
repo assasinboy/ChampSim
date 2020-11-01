@@ -57,15 +57,15 @@ public:
   unordered_map<trace, unsigned long, KeyHash, StructEqual> Map;
 };
 
-
-unsigned int c_size;
+int x=0;
+unsigned int c_size = 10;
 void* input_seen;
 int size_data;
-char buf[8] = "";
+//char buf[8] = "";
 unsigned long num_inputs=0;
 vector<time_block> cache;
 vector<long> fill_points;
-bool prune;
+bool prune = false;
 bool first_prune = false, prune_needed = false;
 long fill_point = 0, hit_count = 0;
 
@@ -169,6 +169,9 @@ void coalesce(){
 template <class T, class U>  
 void run_cache(T* inp, U* input_seen, unsigned long index){
   auto finder = input_seen->Map.find(*inp);
+ // if (num_inputs % 10 == 0) {
+
+ // }
   if(finder != input_seen->Map.end()){
     if (index == 130) cout << finder->second << endl;
     struct time_block new_block = {finder->second, index+1, 1};
@@ -225,19 +228,28 @@ static void usage (char * prog)
 
 
 template <class T, class U>  
-void readInput(char buf[8],void* input_seen ,int num_inputs){ 
+void readInput(uint64_t entry,void* input_seen ,int num_inputs){ 
   T read_data;
-  memcpy(&read_data, buf, sizeof(T));
+  //memcpy(&read_data, buf, sizeof(T));
+  read_data.input1 = entry; 
   run_cache<T,U>(&read_data, reinterpret_cast<U*>(input_seen), num_inputs);
 }
 
-void CACHE::initialize(char buf[8]) {
-  size_data = sizeof(trace);
-  input_seen = new traceMap;
-  readInput<trace,traceMap>(buf, input_seen, num_inputs);
+void CACHE::initialize(uint64_t entry) {
+  //cout << entry << endl;
+  printf("My int is 0x%x\n",entry);
+  if (num_inputs % 10 == 0) 
+  llc_replacement_final_stats(num_inputs);
+
+  readInput<trace,traceMap>(entry, input_seen, num_inputs);
   num_inputs++;
   }
-/*
+
+void CACHE::llc_initialize_replacement() {
+  //size_data = sizeof(trace);
+  input_seen = new traceMap;
+}
+/* 
 int main(int argc, char **argv){
   int c;
   

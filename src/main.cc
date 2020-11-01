@@ -14,8 +14,8 @@ uint8_t warmup_complete[NUM_CPUS],
         knob_cloudsuite = 0,
         knob_low_bandwidth = 0;
 
-uint64_t warmup_instructions     = 1000000,
-         simulation_instructions = 10000000,
+uint64_t warmup_instructions     = 10,
+         simulation_instructions = 50,
          champsim_seed;
 
 time_t start_time;
@@ -696,8 +696,8 @@ int main(int argc, char** argv)
         ooo_cpu[i].ROB.cpu = i;
 
         // BRANCH PREDICTOR
-        //ooo_cpu[i].initialize_branch_predictor();
-        //printf("why not??");
+        ooo_cpu[i].initialize_branch_predictor();
+        printf("why not??");
         // TLBs
         ooo_cpu[i].ITLB.cpu = i;
         ooo_cpu[i].ITLB.cache_type = IS_ITLB;
@@ -779,7 +779,7 @@ int main(int argc, char** argv)
         major_fault[i] = 0;
     }
 
-    //uncore.LLC.llc_initialize_replacement();
+    uncore.LLC.llc_initialize_replacement();
     uncore.LLC.llc_prefetcher_initialize();
 
     // simulation entry point

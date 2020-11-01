@@ -3,7 +3,7 @@
 
 using namespace std;
 
- extern char buf[8];
+ //extern char buf[8];
  extern unsigned long num_inputs;
 
 struct blackscholes{
