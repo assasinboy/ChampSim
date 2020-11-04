@@ -12,14 +12,14 @@ CPU 0 runs /nfs-scratch/usk6037/ChampSim/traces/lbm_94B.trace.xz
 CPU 0 Bimodal branch predictor
 Initialize Hawkeye state
 
-Warmup complete CPU 0 instructions: 5000001 cycles: 1608191 (Simulation time: 0 hr 0 min 26 sec) 
+Warmup complete CPU 0 instructions: 5000001 cycles: 1608191 (Simulation time: 0 hr 0 min 18 sec) 
 
-Heartbeat CPU 0 instructions: 10000002 cycles: 10306222 heartbeat IPC: 0.970288 cumulative IPC: 0.574843 (Simulation time: 0 hr 1 min 7 sec) 
-Heartbeat CPU 0 instructions: 20000001 cycles: 26900437 heartbeat IPC: 0.60262 cumulative IPC: 0.593067 (Simulation time: 0 hr 2 min 35 sec) 
-Heartbeat CPU 0 instructions: 30000003 cycles: 43849039 heartbeat IPC: 0.590019 cumulative IPC: 0.591844 (Simulation time: 0 hr 3 min 45 sec) 
-Heartbeat CPU 0 instructions: 40000000 cycles: 59541566 heartbeat IPC: 0.637246 cumulative IPC: 0.604142 (Simulation time: 0 hr 4 min 41 sec) 
-Heartbeat CPU 0 instructions: 50000000 cycles: 75607370 heartbeat IPC: 0.62244 cumulative IPC: 0.608115 (Simulation time: 0 hr 5 min 29 sec) 
-Finished CPU 0 instructions: 50000001 cycles: 81414796 cumulative IPC: 0.614139 (Simulation time: 0 hr 5 min 53 sec) 
+Heartbeat CPU 0 instructions: 10000002 cycles: 10306222 heartbeat IPC: 0.970288 cumulative IPC: 0.574843 (Simulation time: 0 hr 0 min 45 sec) 
+Heartbeat CPU 0 instructions: 20000001 cycles: 26900437 heartbeat IPC: 0.60262 cumulative IPC: 0.593067 (Simulation time: 0 hr 1 min 35 sec) 
+Heartbeat CPU 0 instructions: 30000003 cycles: 43849039 heartbeat IPC: 0.590019 cumulative IPC: 0.591844 (Simulation time: 0 hr 2 min 20 sec) 
+Heartbeat CPU 0 instructions: 40000000 cycles: 59541566 heartbeat IPC: 0.637246 cumulative IPC: 0.604142 (Simulation time: 0 hr 3 min 2 sec) 
+Heartbeat CPU 0 instructions: 50000000 cycles: 75607370 heartbeat IPC: 0.62244 cumulative IPC: 0.608115 (Simulation time: 0 hr 3 min 46 sec) 
+Finished CPU 0 instructions: 50000001 cycles: 81414796 cumulative IPC: 0.614139 (Simulation time: 0 hr 4 min 7 sec) 
 
 ChampSim completed all CPUs
 

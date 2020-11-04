@@ -72,8 +72,8 @@ extern uint32_t PAGE_TABLE_LATENCY, SWAP_LATENCY;
 // LAST LEVEL CACHE
 #define LLC_SET NUM_CPUS*2048
 #define LLC_WAY 16
-#define LLC_RQ_SIZE NUM_CPUS*L2C_MSHR_SIZE //48
-#define LLC_WQ_SIZE NUM_CPUS*L2C_MSHR_SIZE //48
+#define LLC_RQ_SIZE NUM_CPUS*L2C_MSHR_SIZE //48     
+#define LLC_WQ_SIZE NUM_CPUS*L2C_MSHR_SIZE //48                 
 #define LLC_PQ_SIZE NUM_CPUS*32
 #define LLC_MSHR_SIZE NUM_CPUS*64
 #define LLC_LATENCY 20  // 4/5 (L1I or L1D) + 10 + 20 = 34/35 cycles
@@ -190,12 +190,14 @@ class CACHE : public MEMORY {
          handle_read(),
          handle_prefetch(),
          handle_trace(),
+         handle_trace(uint64_t ip),
          initialize(uint64_t entry);
 
 
     void add_mshr(PACKET *packet),
          update_fill_cycle(),
          llc_initialize_replacement(),
+         llc_initialize_replacement_PC(),
          update_replacement_state(uint32_t cpu, uint32_t set, uint32_t way, uint64_t full_addr, uint64_t ip, uint64_t victim_addr, uint32_t type, uint8_t hit),
          llc_update_replacement_state(uint32_t cpu, uint32_t set, uint32_t way, uint64_t full_addr, uint64_t ip, uint64_t victim_addr, uint32_t type, uint8_t hit),
          lru_update(uint32_t set, uint32_t way),

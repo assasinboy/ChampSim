@@ -697,7 +697,7 @@ int main(int argc, char** argv)
 
         // BRANCH PREDICTOR
         ooo_cpu[i].initialize_branch_predictor();
-        printf("why not??");
+       // printf("why not??");
         // TLBs
         ooo_cpu[i].ITLB.cpu = i;
         ooo_cpu[i].ITLB.cache_type = IS_ITLB;
@@ -778,7 +778,7 @@ int main(int argc, char** argv)
         minor_fault[i] = 0;
         major_fault[i] = 0;
     }
-
+    
     uncore.LLC.llc_initialize_replacement();
     uncore.LLC.llc_prefetcher_initialize();
 
@@ -804,16 +804,22 @@ int main(int argc, char** argv)
             if (stall_cycle[i] <= current_core_cycle[i]) {
 
           // retire
-          if ((ooo_cpu[i].ROB.entry[ooo_cpu[i].ROB.head].executed == COMPLETED) && (ooo_cpu[i].ROB.entry[ooo_cpu[i].ROB.head].event_cycle <= current_core_cycle[i]))
+            //printf("Hey\n");
+               // printf("ROB executed %s\n",ooo_cpu[i].ROB.entry[ooo_cpu[i].ROB.head].executed );
+          if ((ooo_cpu[i].ROB.entry[ooo_cpu[i].ROB.head].executed == COMPLETED) && (ooo_cpu[i].ROB.entry[ooo_cpu[i].ROB.head].event_cycle <= current_core_cycle[i])) {
+           // printf("Hey1\n");
+        //printf("fill_level at main %d\n",fill_level);
         ooo_cpu[i].retire_rob();
-
+          }
           // complete 
           ooo_cpu[i].update_rob();
 
           // schedule
           uint32_t schedule_index = ooo_cpu[i].ROB.next_schedule;
-          if ((ooo_cpu[i].ROB.entry[schedule_index].scheduled == 0) && (ooo_cpu[i].ROB.entry[schedule_index].event_cycle <= current_core_cycle[i]))
+          if ((ooo_cpu[i].ROB.entry[schedule_index].scheduled == 0) && (ooo_cpu[i].ROB.entry[schedule_index].event_cycle <= current_core_cycle[i])) {
+            //printf("Hey\n");
         ooo_cpu[i].schedule_instruction();
+          }
           // execute
           ooo_cpu[i].execute_instruction();
 
@@ -826,6 +832,7 @@ int main(int argc, char** argv)
           ooo_cpu[i].update_rob();
 
           // decode
+     //     printf("Decode buff occupancy %d\n",ooo_cpu[i].DECODE_BUFFER.occupancy);
           if(ooo_cpu[i].DECODE_BUFFER.occupancy > 0)
         {
           ooo_cpu[i].decode_and_dispatch();
@@ -835,14 +842,16 @@ int main(int argc, char** argv)
           ooo_cpu[i].fetch_instruction();
           
           // read from trace
+      //     printf("My Fetch_size is 0x%x\n",ooo_cpu[i].IFETCH_BUFFER.SIZE);
           if ((ooo_cpu[i].IFETCH_BUFFER.occupancy < ooo_cpu[i].IFETCH_BUFFER.SIZE) && (ooo_cpu[i].fetch_stall == 0))
         {
           ooo_cpu[i].read_from_trace();
         }
         }
-
+            //printf("here1\n");
             // heartbeat information
             if (show_heartbeat && (ooo_cpu[i].num_retired >= ooo_cpu[i].next_print_instruction)) {
+                //printf("here2\n");
                 float cumulative_ipc;
                 if (warmup_complete[i])
                     cumulative_ipc = (1.0*(ooo_cpu[i].num_retired - ooo_cpu[i].begin_sim_instr)) / (current_core_cycle[i] - ooo_cpu[i].begin_sim_cycle);
@@ -858,17 +867,21 @@ int main(int argc, char** argv)
                 ooo_cpu[i].last_sim_instr = ooo_cpu[i].num_retired;
                 ooo_cpu[i].last_sim_cycle = current_core_cycle[i];
             }
-
+            //printf("here3\n");
             // check for deadlock
             if (ooo_cpu[i].ROB.entry[ooo_cpu[i].ROB.head].ip && (ooo_cpu[i].ROB.entry[ooo_cpu[i].ROB.head].event_cycle + DEADLOCK_CYCLE) <= current_core_cycle[i])
                 print_deadlock(i);
 
             // check for warmup
             // warmup complete
+       //     printf("warmup_instructions %d\n",warmup_instructions);
+        //    printf("ooo_cpu[i].num_retired %d\n",ooo_cpu[i].num_retired);
             if ((warmup_complete[i] == 0) && (ooo_cpu[i].num_retired > warmup_instructions)) {
+                //printf("here1\n");
                 warmup_complete[i] = 1;
                 all_warmup_complete++;
             }
+            //printf("warmup_complete %d\n",all_warmup_complete);
             if (all_warmup_complete == NUM_CPUS) { // this part is called only once when all cores are warmed up
                 all_warmup_complete++;
                 finish_warmup();
@@ -882,7 +895,7 @@ int main(int argc, char** argv)
             if (ooo_cpu[1].num_retired > 0)
                 warmup_complete[1] = 1;
             */
-            
+            //printf("here4\n");
             // simulation complete
             if ((all_warmup_complete > NUM_CPUS) && (simulation_complete[i] == 0) && (ooo_cpu[i].num_retired >= (ooo_cpu[i].begin_sim_instr + ooo_cpu[i].simulation_instructions))) {
                 simulation_complete[i] = 1;
@@ -892,11 +905,11 @@ int main(int argc, char** argv)
                 cout << "Finished CPU " << i << " instructions: " << ooo_cpu[i].finish_sim_instr << " cycles: " << ooo_cpu[i].finish_sim_cycle;
                 cout << " cumulative IPC: " << ((float) ooo_cpu[i].finish_sim_instr / ooo_cpu[i].finish_sim_cycle);
                 cout << " (Simulation time: " << elapsed_hour << " hr " << elapsed_minute << " min " << elapsed_second << " sec) " << endl;
-
+           //     printf("here5\n");
                 record_roi_stats(i, &ooo_cpu[i].L1D);
                 record_roi_stats(i, &ooo_cpu[i].L1I);
                 record_roi_stats(i, &ooo_cpu[i].L2C);
-                record_roi_stats(i, &uncore.LLC);
+               // record_roi_stats(i, &uncore.LLC);
 
                 all_simulation_complete++;
             }
@@ -930,7 +943,7 @@ int main(int argc, char** argv)
             ooo_cpu[i].L1D.l1d_prefetcher_final_stats();
         ooo_cpu[i].L2C.l2c_prefetcher_final_stats();
 #endif
-            print_sim_stats(i, &uncore.LLC);
+         //   print_sim_stats(i, &uncore.LLC);
         }
         uncore.LLC.llc_prefetcher_final_stats();
     }
@@ -944,7 +957,7 @@ int main(int argc, char** argv)
         print_roi_stats(i, &ooo_cpu[i].L1I);
         print_roi_stats(i, &ooo_cpu[i].L2C);
 #endif
-        print_roi_stats(i, &uncore.LLC);
+       // print_roi_stats(i, &uncore.LLC);
         cout << "Major fault: " << major_fault[i] << " Minor fault: " << minor_fault[i] << endl;
     }
 
@@ -958,6 +971,7 @@ int main(int argc, char** argv)
 
 #ifndef CRC2_COMPILE
     //uncore.LLC.llc_replacement_final_stats();
+    printf("********Statistics for Perfect Cache********\n");
     uncore.LLC.llc_replacement_final_stats(num_inputs);
     print_dram_stats();
     print_branch_stats();

@@ -12,14 +12,14 @@ CPU 0 runs /nfs-scratch/usk6037/ChampSim/traces/calculix_2655B.trace.xz
 CPU 0 Bimodal branch predictor
 Initialize Hawkeye state
 
-Warmup complete CPU 0 instructions: 5000002 cycles: 1479633 (Simulation time: 0 hr 0 min 22 sec) 
+Warmup complete CPU 0 instructions: 5000002 cycles: 1479633 (Simulation time: 0 hr 0 min 14 sec) 
 
-Heartbeat CPU 0 instructions: 10000002 cycles: 4366871 heartbeat IPC: 2.28997 cumulative IPC: 1.73176 (Simulation time: 0 hr 0 min 36 sec) 
-Heartbeat CPU 0 instructions: 20000001 cycles: 9839912 heartbeat IPC: 1.82714 cumulative IPC: 1.7942 (Simulation time: 0 hr 1 min 5 sec) 
-Heartbeat CPU 0 instructions: 30000001 cycles: 15588220 heartbeat IPC: 1.73964 cumulative IPC: 1.77197 (Simulation time: 0 hr 1 min 33 sec) 
-Heartbeat CPU 0 instructions: 40000000 cycles: 21221954 heartbeat IPC: 1.77502 cumulative IPC: 1.77284 (Simulation time: 0 hr 2 min 9 sec) 
-Heartbeat CPU 0 instructions: 50000000 cycles: 27168275 heartbeat IPC: 1.68171 cumulative IPC: 1.75175 (Simulation time: 0 hr 2 min 45 sec) 
-Finished CPU 0 instructions: 50000000 cycles: 28894994 cumulative IPC: 1.7304 (Simulation time: 0 hr 3 min 6 sec) 
+Heartbeat CPU 0 instructions: 10000002 cycles: 4366871 heartbeat IPC: 2.28997 cumulative IPC: 1.73176 (Simulation time: 0 hr 0 min 23 sec) 
+Heartbeat CPU 0 instructions: 20000001 cycles: 9839912 heartbeat IPC: 1.82714 cumulative IPC: 1.7942 (Simulation time: 0 hr 0 min 39 sec) 
+Heartbeat CPU 0 instructions: 30000001 cycles: 15588220 heartbeat IPC: 1.73964 cumulative IPC: 1.77197 (Simulation time: 0 hr 0 min 56 sec) 
+Heartbeat CPU 0 instructions: 40000000 cycles: 21221954 heartbeat IPC: 1.77502 cumulative IPC: 1.77284 (Simulation time: 0 hr 1 min 14 sec) 
+Heartbeat CPU 0 instructions: 50000000 cycles: 27168275 heartbeat IPC: 1.68171 cumulative IPC: 1.75175 (Simulation time: 0 hr 1 min 32 sec) 
+Finished CPU 0 instructions: 50000000 cycles: 28894994 cumulative IPC: 1.7304 (Simulation time: 0 hr 1 min 41 sec) 
 
 ChampSim completed all CPUs
 

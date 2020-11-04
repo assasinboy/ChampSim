@@ -384,8 +384,10 @@ void O3_CPU::read_from_trace()
 			last_branch_result(IFETCH_BUFFER.entry[ifetch_buffer_index].ip, IFETCH_BUFFER.entry[ifetch_buffer_index].branch_taken);
                     }
 
-                    if ((num_reads >= instrs_to_read_this_cycle) || (IFETCH_BUFFER.occupancy == IFETCH_BUFFER.SIZE))
+                    if ((num_reads >= instrs_to_read_this_cycle) || (IFETCH_BUFFER.occupancy == IFETCH_BUFFER.SIZE)) {
+                  //      printf("continue_reading is 0\n");
                         continue_reading = 0;
+                    }
                 }
                 instr_unique_id++;
             }
@@ -560,23 +562,26 @@ void O3_CPU::fetch_instruction()
       fetch_stall = 0;
       fetch_resume_cycle = 0;
     }
-
+   // printf("IFETCH_BUFFER.occupancy %d\n",IFETCH_BUFFER.occupancy);
   if(IFETCH_BUFFER.occupancy == 0)
     {
+       // printf("Yo realy?\n");
       return;
     }
-
+    
   // scan through IFETCH_BUFFER to find instructions that need to be translated
   uint32_t index = IFETCH_BUFFER.head;
   for(uint32_t i=0; i<IFETCH_BUFFER.SIZE; i++)
     {
+        //printf("IFETCH_BUFFER index %d\n",IFETCH_BUFFER.head);
       if(IFETCH_BUFFER.entry[index].ip == 0)
 	{
 	  break;
 	}
-
+        //printf("whats the translated value %d\n",IFETCH_BUFFER.entry[index].translated);
       if(IFETCH_BUFFER.entry[index].translated == 0)
 	{
+       // printf("is translated 0?\n");
 	  // begin process of fetching this instruction by sending it to the ITLB
 	  // add it to the ITLB's read queue
 	  PACKET trace_packet;
@@ -600,7 +605,7 @@ void O3_CPU::fetch_instruction()
 	  trace_packet.asid[0] = 0;
 	  trace_packet.asid[1] = 0;
 	  trace_packet.event_cycle = current_core_cycle[cpu];
-	  
+	//  printf("ITLB?\n");
 	  int rq_index = ITLB.add_rq(&trace_packet);
 
 	  if(rq_index != -2)
@@ -616,10 +621,11 @@ void O3_CPU::fetch_instruction()
 		}
 	    }
 	}
-
+        //printf("whats the translated value,fetched value %d, %d\n",IFETCH_BUFFER.entry[index].translated,IFETCH_BUFFER.entry[index].fetched);
       // fetch cache lines that were part of a translated page but not the cache line that initiated the translation
       if((IFETCH_BUFFER.entry[index].translated == COMPLETED) && (IFETCH_BUFFER.entry[index].fetched == 0))
 	{
+       // printf("is fetched and translated?\n");
 	  // add it to the L1-I's read queue
 	  PACKET fetch_packet;
 	  fetch_packet.instruction = 1;
@@ -649,7 +655,7 @@ void O3_CPU::fetch_instruction()
 	    }
 	  l1i_prefetcher_cache_operate(fetch_packet.ip, (hit_way != -1), prefetch_hit);
 	  */
-	  
+	//  printf("L1?\n");
 	  int rq_index = L1I.add_rq(&fetch_packet);
 
 	  if(rq_index != -2)
@@ -659,6 +665,7 @@ void O3_CPU::fetch_instruction()
 		{
 		  if(((IFETCH_BUFFER.entry[j].ip)>>6) == ((IFETCH_BUFFER.entry[index].ip)>>6))
 		    {
+         //       printf("Also in here right? COMP,INFL\n");
 		      IFETCH_BUFFER.entry[j].translated = COMPLETED;
 		      IFETCH_BUFFER.entry[j].fetched = INFLIGHT;
 		    }
@@ -675,7 +682,7 @@ void O3_CPU::fetch_instruction()
       if(index == IFETCH_BUFFER.head)
 	{
 	  break;
-	}
+	} 
     }
   
   // send to DECODE stage
@@ -684,6 +691,7 @@ void O3_CPU::fetch_instruction()
     {
       if(decode_full)
 	{
+       // printf("is it full?\n");
           break;
         }
 
@@ -691,9 +699,10 @@ void O3_CPU::fetch_instruction()
         {
           break;
 	}	      
-      
+      //printf("DECODE_BUFFER.occupancy %d\n",DECODE_BUFFER.occupancy);
       if((IFETCH_BUFFER.entry[IFETCH_BUFFER.head].translated == COMPLETED) && (IFETCH_BUFFER.entry[IFETCH_BUFFER.head].fetched == COMPLETED))
 	{
+      //  printf("is it translated and fetched\n");
 	  if(DECODE_BUFFER.occupancy < DECODE_BUFFER.SIZE)
 	    {
 	      uint32_t decode_index = add_to_decode_buffer(&IFETCH_BUFFER.entry[IFETCH_BUFFER.head]);
@@ -725,6 +734,7 @@ void O3_CPU::fetch_instruction()
 
 void O3_CPU::decode_and_dispatch()
 {
+   // printf("DECODE_BUFFER.SIZE %d\n",DECODE_BUFFER.SIZE);
   // dispatch DECODE_WIDTH instructions that have decoded into the ROB
   uint32_t count_dispatches = 0;
   for(uint32_t i=0; i<DECODE_BUFFER.SIZE; i++)
@@ -842,8 +852,10 @@ int O3_CPU::prefetch_code_line(uint64_t pf_v_addr)
 // III. Instruction is retired
 void O3_CPU::schedule_instruction()
 {
-    if ((ROB.head == ROB.tail) && ROB.occupancy == 0)
+    if ((ROB.head == ROB.tail) && ROB.occupancy == 0) {
+    //    printf("Returning here too?\n");
         return;
+    }
 
     // execution is out-of-order but we have an in-order scheduling algorithm to detect all RAW dependencies
     uint32_t limit = ROB.next_fetch[1];
@@ -996,8 +1008,10 @@ void O3_CPU::reg_RAW_dependency(uint32_t prior, uint32_t current, uint32_t sourc
 
 void O3_CPU::execute_instruction()
 {
-    if ((ROB.head == ROB.tail) && ROB.occupancy == 0)
+    if ((ROB.head == ROB.tail) && ROB.occupancy == 0) {
+        //printf("Are u returning?\n");
         return;
+    }
 
     // out-of-order execution for non-memory instructions
     // memory instructions are handled by memory_instruction()
@@ -1818,11 +1832,17 @@ void O3_CPU::operate_cache()
 
 void O3_CPU::update_rob()
 {
-    if (ITLB.PROCESSED.occupancy && (ITLB.PROCESSED.entry[ITLB.PROCESSED.head].event_cycle <= current_core_cycle[cpu]))
+    //printf("ATLEAST HERE?");
+    //printf("ITLB.PROCESSED.occupancy %d\n", ITLB.PROCESSED.occupancy);
+    if (ITLB.PROCESSED.occupancy && (ITLB.PROCESSED.entry[ITLB.PROCESSED.head].event_cycle <= current_core_cycle[cpu])) {
+    //    printf("WHY NOT HERE?");
         complete_instr_fetch(&ITLB.PROCESSED, 1);
-
-    if (L1I.PROCESSED.occupancy && (L1I.PROCESSED.entry[L1I.PROCESSED.head].event_cycle <= current_core_cycle[cpu]))
+    }
+    //printf("L1I.PROCESSED.occupancy %d\n", L1I.PROCESSED.occupancy);
+    if (L1I.PROCESSED.occupancy && (L1I.PROCESSED.entry[L1I.PROCESSED.head].event_cycle <= current_core_cycle[cpu])) {
+     //   printf("WHY NOT HERE1?");
         complete_instr_fetch(&L1I.PROCESSED, 0);
+    }
 
     if (DTLB.PROCESSED.occupancy && (DTLB.PROCESSED.entry[DTLB.PROCESSED.head].event_cycle <= current_core_cycle[cpu]))
         complete_data_fetch(&DTLB.PROCESSED, 1);
@@ -1832,6 +1852,7 @@ void O3_CPU::update_rob()
 
     // update ROB entries with completed executions
     if ((inflight_reg_executions > 0) || (inflight_mem_executions > 0)) {
+       // printf("HEYYYYY\n");
         if (ROB.head < ROB.tail) {
             for (uint32_t i=ROB.head; i<ROB.tail; i++) 
                 complete_execution(i);

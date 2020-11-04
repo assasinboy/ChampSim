@@ -58,23 +58,67 @@ public:
 };
 
 int x=0;
-unsigned int c_size = 10;
+unsigned int c_size = 16;
 void* input_seen;
-int size_data;
-//char buf[8] = "";
-unsigned long num_inputs=0;
-vector<time_block> cache;
-vector<long> fill_points;
+int size_data=0;
 bool prune = false;
 bool first_prune = false, prune_needed = false;
 long fill_point = 0, hit_count = 0;
 
+  unsigned long num_inputs=0;
+  vector<time_block> cache;
+  vector<long> fill_points;
 
 static void coalesce();
 //static void pPrintInput(streamcluster input);
 static void pPrintVector();
 static void pPrintBlock(struct time_block b);
 
+
+// *************************** LRU FOR CHAMPSIM FUNCTIONALITY ***************************
+
+
+uint32_t CACHE::llc_find_victim(uint32_t cpu, uint64_t instr_id, uint32_t set, const BLOCK *current_set, uint64_t ip, uint64_t full_addr, uint32_t type)
+{
+    // baseline LRU
+    return lru_victim(cpu, instr_id, set, current_set, ip, full_addr, type); 
+}
+
+// called on every cache hit and cache fill
+void CACHE::llc_update_replacement_state(uint32_t cpu, uint32_t set, uint32_t way, uint64_t full_addr, uint64_t ip, uint64_t victim_addr, uint32_t type, uint8_t hit)
+{
+    string TYPE_NAME;
+    if (type == LOAD)
+        TYPE_NAME = "LOAD";
+    else if (type == RFO)
+        TYPE_NAME = "RFO";
+    else if (type == PREFETCH)
+        TYPE_NAME = "PF";
+    else if (type == WRITEBACK)
+        TYPE_NAME = "WB";
+    else
+        assert(0);
+
+    if (hit)
+        TYPE_NAME += "_HIT";
+    else
+        TYPE_NAME += "_MISS";
+
+    if ((type == WRITEBACK) && ip)
+        assert(0);
+
+    // uncomment this line to see the LLC accesses
+    // cout << "CPU: " << cpu << "  LLC " << setw(9) << TYPE_NAME << " set: " << setw(5) << set << " way: " << setw(2) << way;
+    // cout << hex << " paddr: " << setw(12) << paddr << " ip: " << setw(8) << ip << " victim_addr: " << victim_addr << dec << endl;
+
+    // baseline LRU
+    if (hit && (type == WRITEBACK)) // writeback hit does not update LRU state
+        return;
+
+    return lru_update(set, way);
+}
+
+// *************************** LRU FOR CHAMPSIM FUNCTIONALITY ***************************
 
 template <class T>  
 void prune_blocks(T* input_seen){
@@ -112,8 +156,11 @@ void insert_time_slot(time_block block, T* input_seen){
   while (cache[index].start_time < fill_point) index += 1; 
   found_split =  block.start_time < cache[index].start_time; // 1 when block start time before cache start time
   while( index < cache.size() + offset ){
+   
     if ( found_split ) {  
+    //  printf("cache[index].lines_filled1  %d\n", cache[index].lines_filled);
       cache[index].lines_filled++;
+    //  printf("cache[index].lines_filled2  %d\n", cache[index].lines_filled);
     } // already found split and just add 1 to the rest of the vector
     else if ( block.start_time == cache[index].end_time ) {  
       found_split = true; } // don't split block, just continue
@@ -125,6 +172,7 @@ void insert_time_slot(time_block block, T* input_seen){
       cache[index].end_time = block.start_time;
       index++; offset++;
     }
+  
     assert(cache[index].lines_filled <= c_size);
     if (cache[index].lines_filled == c_size) {
       fill_point = cache[index].end_time;
@@ -237,13 +285,14 @@ void readInput(uint64_t entry,void* input_seen ,int num_inputs){
 
 void CACHE::initialize(uint64_t entry) {
   //cout << entry << endl;
-  printf("My int is 0x%x\n",entry);
-  if (num_inputs % 10 == 0) 
-  llc_replacement_final_stats(num_inputs);
+ // printf("My int is 0x%x\n",entry);
+ // if (num_inputs % 12 == 0) 
+ // llc_replacement_final_stats(num_inputs);
 
   readInput<trace,traceMap>(entry, input_seen, num_inputs);
   num_inputs++;
   }
+
 
 void CACHE::llc_initialize_replacement() {
   //size_data = sizeof(trace);

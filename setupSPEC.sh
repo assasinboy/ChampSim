@@ -16,7 +16,7 @@ run_dir="/nfs-scratch/usk6037/ChampSim"
 rm -rf ${benchmark_dir}
 mkdir ${benchmark_dir}
 
-for benchmark in lbm_94B #calculix_2655B sphinx3_883B tonto_422B
+for benchmark in lbm_94B sphinx3_883B # tonto_422B calculix_2655B
 do
 	echo ${benchmark}
 	mkdir ${benchmark_dir}/${benchmark}

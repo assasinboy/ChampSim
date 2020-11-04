@@ -7,13 +7,18 @@ uint64_t l2pf_access = 0;
 
 void CACHE::handle_fill()
 {
+
     // handle fill
+    
     uint32_t fill_cpu = (MSHR.next_fill_index == MSHR_SIZE) ? NUM_CPUS : MSHR.entry[MSHR.next_fill_index].cpu;
-    if (fill_cpu == NUM_CPUS)
+    //printf("DOes it pass num cpus at handle_fill? %d\n",fill_cpu);
+    if (fill_cpu == NUM_CPUS) {
+       // printf("EVER GETTING HERE?\n");
         return;
+    }
 
     if (MSHR.next_fill_cycle <= current_core_cycle[fill_cpu]) {
-
+        
 #ifdef SANITY_CHECK
         if (MSHR.next_fill_index >= MSHR.SIZE)
             assert(0);
@@ -24,17 +29,23 @@ void CACHE::handle_fill()
         // find victim
         uint32_t set = get_set(MSHR.entry[mshr_index].address), way;
         if (cache_type == IS_LLC) {
-            //way = llc_find_victim(fill_cpu, MSHR.entry[mshr_index].instr_id, set, block[set], MSHR.entry[mshr_index].ip, MSHR.entry[mshr_index].full_addr, MSHR.entry[mshr_index].type);
+            // HERE!
+            if (cache_type == IS_LLC) {
+                //handle_trace(MSHR.entry[mshr_index].ip);
+                }
+            way = llc_find_victim(fill_cpu, MSHR.entry[mshr_index].instr_id, set, block[set], MSHR.entry[mshr_index].ip, MSHR.entry[mshr_index].full_addr, MSHR.entry[mshr_index].type);
         }
         else
             way = find_victim(fill_cpu, MSHR.entry[mshr_index].instr_id, set, block[set], MSHR.entry[mshr_index].ip, MSHR.entry[mshr_index].full_addr, MSHR.entry[mshr_index].type);
 
 #ifdef LLC_BYPASS
+       
         if ((cache_type == IS_LLC) && (way == LLC_WAY)) { // this is a bypass that does not fill the LLC
-
+             assert(0);
             // update replacement policy
             if (cache_type == IS_LLC) {
-                //llc_update_replacement_state(fill_cpu, set, way, MSHR.entry[mshr_index].full_addr, MSHR.entry[mshr_index].ip, 0, MSHR.entry[mshr_index].type, 0);
+              //  handle_trace(MSHR.entry[mshr_index].ip);
+                llc_update_replacement_state(fill_cpu, set, way, MSHR.entry[mshr_index].full_addr, MSHR.entry[mshr_index].ip, 0, MSHR.entry[mshr_index].type, 0);
 
             } 
             else
@@ -43,7 +54,7 @@ void CACHE::handle_fill()
             // COLLECT STATS
             sim_miss[fill_cpu][MSHR.entry[mshr_index].type]++;
             sim_access[fill_cpu][MSHR.entry[mshr_index].type]++;
-
+           // printf("fill level %d\n",fill_level);
             // check fill level
             if (MSHR.entry[mshr_index].fill_level < fill_level) {
 
@@ -125,7 +136,7 @@ void CACHE::handle_fill()
             }
 #endif
         }
-
+     //   printf("do fill %d\n",do_fill );
         if (do_fill){
             // update prefetcher
 	    if (cache_type == IS_L1I)
@@ -146,7 +157,9 @@ void CACHE::handle_fill()
               
             // update replacement policy
             if (cache_type == IS_LLC) {
-               // llc_update_replacement_state(fill_cpu, set, way, MSHR.entry[mshr_index].full_addr, MSHR.entry[mshr_index].ip, block[set][way].full_addr, MSHR.entry[mshr_index].type, 0);
+                // HERE!
+               // handle_trace(MSHR.entry[mshr_index].address);
+                llc_update_replacement_state(fill_cpu, set, way, MSHR.entry[mshr_index].full_addr, MSHR.entry[mshr_index].ip, block[set][way].full_addr, MSHR.entry[mshr_index].type, 0);
             }
             else
                 update_replacement_state(fill_cpu, set, way, MSHR.entry[mshr_index].full_addr, MSHR.entry[mshr_index].ip, block[set][way].full_addr, MSHR.entry[mshr_index].type, 0);
@@ -185,7 +198,7 @@ void CACHE::handle_fill()
                     upper_level_dcache[fill_cpu]->return_data(&MSHR.entry[mshr_index]);
 		}
             }
-
+         //   printf("AM I EVEN GETTING HERE? in handle_fill!\n");
             // update processed packets
             if (cache_type == IS_ITLB) { 
                 MSHR.entry[mshr_index].instruction_pa = block[set][way].data;
@@ -233,7 +246,7 @@ void CACHE::handle_writeback()
     uint32_t writeback_cpu = WQ.entry[WQ.head].cpu;
     if (writeback_cpu == NUM_CPUS)
         return;
-
+   // printf("DOes it pass num cpus at WB? %d\n",writeback_cpu);
     // handle the oldest entry
     if ((WQ.entry[WQ.head].event_cycle <= current_core_cycle[writeback_cpu]) && (WQ.occupancy > 0)) {
         int index = WQ.head;
@@ -241,11 +254,14 @@ void CACHE::handle_writeback()
         // access cache
         uint32_t set = get_set(WQ.entry[index].address);
         int way = check_hit(&WQ.entry[index]);
-        
+        if (cache_type == IS_LLC) {
+            handle_trace(WQ.entry[index].address);
+        }
         if (way >= 0) { // writeback hit (or RFO hit for L1D)
 
             if (cache_type == IS_LLC) {
-               // llc_update_replacement_state(writeback_cpu, set, way, block[set][way].full_addr, WQ.entry[index].ip, 0, WQ.entry[index].type, 1);
+               // handle_trace(WQ.entry[index].ip);
+                llc_update_replacement_state(writeback_cpu, set, way, block[set][way].full_addr, WQ.entry[index].ip, 0, WQ.entry[index].type, 1);
 
             }
             else
@@ -325,6 +341,7 @@ void CACHE::handle_writeback()
 		      else
 			{
 			  add_mshr(&WQ.entry[index]);
+        //      printf("first WQ\n");
 			  lower_level->add_rq(&WQ.entry[index]);
 			}
 		    }
@@ -335,6 +352,7 @@ void CACHE::handle_writeback()
 		      
 		      // add it to the next level's read queue
 		      //if (lower_level) // L1D always has a lower level cache
+        //      printf("second WQ\n");
 		      lower_level->add_rq(&WQ.entry[index]);
 		    }
                 }
@@ -400,7 +418,7 @@ void CACHE::handle_writeback()
                 // find victim
                 uint32_t set = get_set(WQ.entry[index].address), way;
                 if (cache_type == IS_LLC) {
-                  //  way = llc_find_victim(writeback_cpu, WQ.entry[index].instr_id, set, block[set], WQ.entry[index].ip, WQ.entry[index].full_addr, WQ.entry[index].type);
+                    way = llc_find_victim(writeback_cpu, WQ.entry[index].instr_id, set, block[set], WQ.entry[index].ip, WQ.entry[index].full_addr, WQ.entry[index].type);
                 }
                 else
                     way = find_victim(writeback_cpu, WQ.entry[index].instr_id, set, block[set], WQ.entry[index].ip, WQ.entry[index].full_addr, WQ.entry[index].type);
@@ -472,10 +490,13 @@ void CACHE::handle_writeback()
 									       block[set][way].address<<LOG2_BLOCK_SIZE, WQ.entry[index].pf_metadata);
 			cpu = 0;
 		      }
-
+                    if (cache_type == IS_LLC) {
+                        //handle_trace(WQ.entry[index].address);
+                    }
                     // update replacement policy
                     if (cache_type == IS_LLC) {
-                      //  llc_update_replacement_state(writeback_cpu, set, way, WQ.entry[index].full_addr, WQ.entry[index].ip, block[set][way].full_addr, WQ.entry[index].type, 0);
+
+                        llc_update_replacement_state(writeback_cpu, set, way, WQ.entry[index].full_addr, WQ.entry[index].ip, block[set][way].full_addr, WQ.entry[index].type, 0);
                     }
                     else
                         update_replacement_state(writeback_cpu, set, way, WQ.entry[index].full_addr, WQ.entry[index].ip, block[set][way].full_addr, WQ.entry[index].type, 0);
@@ -526,11 +547,16 @@ void CACHE::handle_writeback()
 void CACHE::handle_read()
 {
     // handle read
-    for (uint32_t i=0; i<MAX_READ; i++) {
 
+    for (uint32_t i=0; i<MAX_READ; i++) {
+    //  printf("RQ.entry[RQ.head].ip? %d\n",RQ.entry[RQ.head].ip);  
       uint32_t read_cpu = RQ.entry[RQ.head].cpu;
-      if (read_cpu == NUM_CPUS)
-        return;
+  //    printf("DOes it pass num cpus at READ? %d\n",read_cpu);
+      if (read_cpu == NUM_CPUS) {
+    //    printf("NOT HERE!\n");
+            return;
+      }
+        
 
         // handle the oldest entry
         if ((RQ.entry[RQ.head].event_cycle <= current_core_cycle[read_cpu]) && (RQ.occupancy > 0)) {
@@ -540,8 +566,17 @@ void CACHE::handle_read()
             uint32_t set = get_set(RQ.entry[index].address);
             int way = check_hit(&RQ.entry[index]);
             
-            if (way >= 0) { // read hit
+            if (cache_type == IS_LLC) {
+            handle_trace(RQ.entry[index].address);
+               // handle_trace(RQ.entry[index].address);
+               // printf("RQ.entry[index].address 0x%x\n",RQ.entry[index].address);
+               // printf("RQ.entry[index].full_addr 0x%x\n",RQ.entry[index].full_addr >> 6);
+               // printf("RQ.entry[index].ip 0x%x\n",RQ.entry[index].ip);
+               // printf("\n");
+            }
 
+            if (way >= 0) { // read hit
+          //      printf("Way >=0?? for read?\n");
                 if (cache_type == IS_ITLB) {
                     RQ.entry[index].instruction_pa = block[set][way].data;
                     if (PROCESSED.occupancy < PROCESSED.SIZE)
@@ -582,7 +617,8 @@ void CACHE::handle_read()
 
                 // update replacement policy
                 if (cache_type == IS_LLC) {
-                   // llc_update_replacement_state(read_cpu, set, way, block[set][way].full_addr, RQ.entry[index].ip, 0, RQ.entry[index].type, 1);
+                   // handle_trace(RQ.entry[index].ip);
+                    llc_update_replacement_state(read_cpu, set, way, block[set][way].full_addr, RQ.entry[index].ip, 0, RQ.entry[index].type, 1);
 
                 }
                 else
@@ -660,6 +696,7 @@ void CACHE::handle_read()
 			  add_mshr(&RQ.entry[index]);
 			  if(lower_level)
 			    {
+         //           printf("first RQ\n");
 			      lower_level->add_rq(&RQ.entry[index]);
 			    }
 			}
@@ -670,8 +707,10 @@ void CACHE::handle_read()
 		      add_mshr(&RQ.entry[index]);
 		      
 		      // add it to the next level's read queue
-		      if (lower_level)
+		      if (lower_level) {
+         //               printf("second RQ\n");
                         lower_level->add_rq(&RQ.entry[index]);
+                }
 		      else { // this is the last level
                         if (cache_type == IS_STLB) {
 			  // TODO: need to differentiate page table walk and actual swap
@@ -842,12 +881,15 @@ void CACHE::handle_prefetch()
             // access cache
             uint32_t set = get_set(PQ.entry[index].address);
             int way = check_hit(&PQ.entry[index]);
-            
+            if (cache_type == IS_LLC) {
+                handle_trace(PQ.entry[index].address);
+            }
             if (way >= 0) { // prefetch hit
 
                 // update replacement policy
                 if (cache_type == IS_LLC) {
-                   // llc_update_replacement_state(prefetch_cpu, set, way, block[set][way].full_addr, PQ.entry[index].ip, 0, PQ.entry[index].type, 1);
+                  //  handle_trace(PQ.entry[index].ip);
+                    llc_update_replacement_state(prefetch_cpu, set, way, block[set][way].full_addr, PQ.entry[index].ip, 0, PQ.entry[index].type, 1);
 
                 }
                 else
@@ -948,7 +990,7 @@ void CACHE::handle_prefetch()
 			  // add it to MSHRs if this prefetch miss will be filled to this cache level
 			  if (PQ.entry[index].fill_level <= fill_level)
 			    add_mshr(&PQ.entry[index]);
-
+       //         printf("first PQ\n");
 			  lower_level->add_rq(&PQ.entry[index]); // add it to the DRAM RQ
 			}
 		      }
@@ -1043,8 +1085,7 @@ void CACHE::handle_prefetch()
 	  }
     }
 }
-
-void CACHE::handle_trace() 
+/*void CACHE::handle_trace() 
 {
    //cout << "is it getting to handle_trace?" << endl;
     uint32_t index;
@@ -1061,7 +1102,33 @@ void CACHE::handle_trace()
         //ooo_cpu[0].IFETCH_BUFFER.remove_queue(&ooo_cpu[0].IFETCH_BUFFER.entry[index+i]);
         //readInput(buf[8], int num_inputs)
     }
-    update_fill_cycle();
+    //update_fill_cycle();
+    //pPrintFillPoints();
+    //IFETCH_BUFFER.entry[head]
+    //memcpy()
+}
+*/
+
+// Replaced the older handle_trace with this one. Call this whenever LLC access occur
+
+void CACHE::handle_trace(uint64_t perfect_cache_entry) 
+{
+   //cout << "is it getting to handle_trace?" << endl;
+  //  uint32_t index;
+ 
+  //  for(uint32_t i=0; i<ooo_cpu[0].IFETCH_BUFFER.SIZE; i++)
+  //  {
+  //      if(ooo_cpu[0].IFETCH_BUFFER.entry[index].ip == 0)
+  //      {
+  //          continue;
+  //      }
+  //      index = ooo_cpu[0].IFETCH_BUFFER.head;
+  //      perfect_cache_entry = ooo_cpu[0].IFETCH_BUFFER.entry[index+i].ip;
+    initialize(perfect_cache_entry);
+        //ooo_cpu[0].IFETCH_BUFFER.remove_queue(&ooo_cpu[0].IFETCH_BUFFER.entry[index+i]);
+        //readInput(buf[8], int num_inputs)
+   // }
+    //update_fill_cycle();
     //pPrintFillPoints();
     //IFETCH_BUFFER.entry[head]
     //memcpy()
@@ -1069,11 +1136,14 @@ void CACHE::handle_trace()
 
 void CACHE::operate()
 {
-    if (cache_type == IS_LLC) {
-        handle_trace();
-        return;
-    }
-    else {
+   //printf("fill at operate %d\n",fill_level);
+   //printf("cache_type %d\n",cache_type);
+ //   if (fill_level == FILL_LLC) {
+ //       handle_trace();
+ //       return;
+ //   }
+    
+ //   else {
         handle_fill();
         handle_writeback();
         reads_available_this_cycle = MAX_READ;
@@ -1082,7 +1152,7 @@ void CACHE::operate()
         if (PQ.occupancy && (reads_available_this_cycle > 0)) {
             handle_prefetch();
         }
-    }
+//    }
 
 }
 
@@ -1215,6 +1285,7 @@ int CACHE::invalidate_entry(uint64_t inval_addr)
 int CACHE::add_rq(PACKET *packet)
 {
     // check for the latest wirtebacks in the write queue
+  //  printf("add_rq packet.ip? 0x%x\n", packet->ip);
     int wq_index = WQ.check_queue(packet);
     if (wq_index != -1) {
         
