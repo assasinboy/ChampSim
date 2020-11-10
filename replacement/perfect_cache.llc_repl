@@ -74,6 +74,10 @@ static void coalesce();
 //static void pPrintInput(streamcluster input);
 static void pPrintVector();
 static void pPrintBlock(struct time_block b);
+int find_first(time_block block, int index);
+int handle_first(time_block block, int index);
+void shift_lines_filled(int index);
+void insert_end_block(time_block block);
 
 
 // *************************** LRU FOR CHAMPSIM FUNCTIONALITY ***************************
@@ -121,79 +125,147 @@ void CACHE::llc_update_replacement_state(uint32_t cpu, uint32_t set, uint32_t wa
 
 // *************************** LRU FOR CHAMPSIM FUNCTIONALITY ***************************
 
-template <class T>  
+template <class T>
 void prune_blocks(T* input_seen){
   size_t last_fill = fill_points.back(), index = 0;
-  first_prune = true;
-  while ( cache[0].end_time <= last_fill ) cache.erase(cache.begin()); 
+  while ( cache[0].end_time < last_fill ) cache.erase(cache.begin());
   auto finder = input_seen->Map.begin();
   while ( finder != input_seen->Map.end() ){
     if ( finder->second < last_fill ) finder = input_seen->Map.erase(finder);
     else finder++;
   }
+  prune_needed = false;
 }
 
-
-template <class T>  
+template <class T>
 void insert_time_slot(time_block block, T* input_seen){
-
-  bool found_split = false, fill_captured = false;
-  vector<time_block> copy_cache = cache;
-  size_t offset = 0, index = 0;
-  if ( block.start_time < fill_point ) {
-    return;
-  }
+  size_t index = 0;
+  if ( block.start_time < fill_point ) return;
   hit_count++;
-  sort(fill_points.begin(), fill_points.end());
   if ( cache.empty() || block.start_time > cache[cache.size() - 1].end_time ){
     cache.push_back(block);
-    if (c_size == 1) {
+    if ( c_size == 1 ) {
       fill_point = cache[cache.size() - 1].end_time;
       fill_points.push_back(fill_point);
-      if (prune) prune_blocks<T>(input_seen);
+      if ( prune ) prune_blocks<T>(input_seen);
     }
     return;
   }
-  while (cache[index].start_time < fill_point) index += 1; 
-  found_split =  block.start_time < cache[index].start_time; // 1 when block start time before cache start time
-  while( index < cache.size() + offset ){
-    if ( found_split ) {  
-      cache[index].lines_filled++;
-    } // already found split and just add 1 to the rest of the vector
-    else if ( block.start_time == cache[index].end_time ) {  
-      found_split = true; } // don't split block, just continue
-    else if ( cache[index].start_time < block.start_time && cache[index].end_time > block.start_time ){ // found which block needs to be split
-      found_split = true;
-      struct time_block new_block = {block.start_time, cache[index].end_time, cache[index].lines_filled + 1};
-      assert(new_block.lines_filled <= c_size);
-      cache.insert(cache.begin()+index+1, new_block);
-      cache[index].end_time = block.start_time;
-      index++; //offset++;
+  index = find_first(block, index);
+  index = handle_first(block, index);
+  shift_lines_filled(index);
+  insert_end_block(block);
+  if ( prune && prune_needed ) prune_blocks<T>(input_seen);
+}
+
+int find_first(time_block block, int index){
+  /* While true, iterate through cache blocks until you reach:
+       end of the cache
+       block start after cache[index] and before cache[index + 1]
+   */
+  if ( cache[index].lines_filled == c_size && c_size != 1) index++;
+  while ( index != cache.size()-1){
+    if ( cache[index].start_time < fill_point ) {
+      index++;
+      continue;
     }
-    assert(cache[index].lines_filled <= c_size);
-    if (cache[index].lines_filled == c_size) {
-      fill_point = cache[index].end_time;
-      if (find(fill_points.begin(), fill_points.end(), fill_point) == fill_points.end()) {
-  if (!fill_captured) fill_captured = true;
-        else fill_points.pop_back();
-  fill_points.push_back(fill_point);
-      }
-      prune_needed = true;
+    if ( block.start_time > cache[index].start_time ){
+      if ( block.start_time <= cache[index+1].start_time )
+  return index;
     }
     index++;
   }
-  struct time_block end_block = {cache[cache.size()-1].end_time, block.end_time, 1};
-  cache.push_back(end_block);
-  if ( cache[0].start_time > block.start_time){
-    struct time_block start_block = {block.start_time, cache[0].start_time, 1};
-    cache.insert(cache.begin(), start_block);
-    } //insert time_block before first block
-  if( prune && prune_needed ) { prune_blocks<T>(input_seen); prune_needed = false; }
-  coalesce();
+  return index;
 }
 
 
-/*TODO(dlw0460): write function definition. */
+int handle_first(time_block block, int index) {
+  // cases:
+  //   block start before cache block end (SPLIT)
+  //   block start equal cache block end  (COALESCE)
+  //   block start after cache block end  (UNAFFECTED/COALESCE)
+  if ( block.start_time < cache[index].end_time ) {
+    struct time_block new_block;
+    if ( index == cache.size()-1 ) {
+      new_block = {block.start_time, cache[index].end_time, cache[index].lines_filled+1};
+      cache.push_back(new_block);
+      assert(new_block.lines_filled <= c_size);
+    }
+    else {
+      new_block = {block.start_time, cache[index+1].start_time-1, cache[index].lines_filled+1};
+      cache[index].end_time = block.start_time-1;
+      cache.insert(cache.begin()+index+1, new_block);
+      assert(new_block.lines_filled <= c_size);
+    }
+    if ( cache[index+1].lines_filled == c_size ) {
+      prune_needed = true;
+      fill_point = cache[index+1].end_time;
+    }
+    assert(new_block.lines_filled <= c_size);
+    return index+2; // skipping index and the block that just inserted (lines_filled already find);
+  }
+
+  else if ( block.start_time == cache[index].end_time ) {
+    if ( !(index == cache.size()-1) ) {
+      cache[index].end_time = cache[index+1].start_time - 1;
+      return index+1;
+    } 
+  }
+
+  else {
+    if ( !(index == cache.size()-1) ) {
+      // If the block of interest can coalesce with the blocks to the left and right of it
+      struct time_block new_block = {block.start_time, cache[index+1].start_time-1, 1};
+      cache.insert(cache.begin()+index+1, new_block);
+      return index+2;
+    } 
+  }
+  if ( index == cache.size()-1 ) cache[index].lines_filled -= 1;
+  return index;
+}
+
+
+void shift_lines_filled(int index) {
+  // For the remaining of the cache, increase lines filled by 1, fill any holes with new blocks
+  // Find any times cache gets filled here
+  while ( index < cache.size() ) {
+    if ( cache[index].end_time == fill_point ) {
+      index++; continue;
+    }
+    cache[index].lines_filled += 1;
+    assert(cache[index].lines_filled <= c_size);
+    if ( cache[index].lines_filled == c_size ) {
+      fill_point = cache[index].end_time;
+      fill_points.push_back(fill_point);
+      prune_needed = true;
+    }
+    if ( index < cache.size()-1 ) {
+      if (cache[index].end_time + 1 != cache[index+1].start_time ) {
+  struct time_block new_block = {cache[index].end_time+1, cache[index+1].start_time-1, 1};
+  cache.insert(cache.begin()+index+1, new_block);
+  index++;
+      }
+    }
+    index++;
+  }
+}
+
+
+void insert_end_block(time_block block) {
+  // if block.start_time == the end_time of last cache element - 1, adjust cache element's end time
+  // else add in the cache block from the end of the cache to block.end_time
+  if ( block.start_time == cache[cache.size()-1].end_time) {
+    if ( cache[cache.size()-1].lines_filled == 1 ) {
+      cache[cache.size()-1].end_time = block.end_time;
+    }
+  } else {
+    struct time_block end_block = {cache[cache.size()-1].end_time+1, block.end_time, 1};
+    cache.push_back(end_block);
+  }
+}
+
+/*
+
 void coalesce(){
   size_t index = 0;
   while ( index < cache.size()-1 ){
@@ -205,22 +277,20 @@ void coalesce(){
     else index++;
   }
 }
-
+*/
 /*void pPrintInput(steamcluster inp){
   if (input_type == "streamcluster")
     cout << "Input: " << inp.input1 << " " << inp.input2 << " " << inp.input3 << endl;
     }*/
 
-template <class T, class U>  
+template <class T, class U>
 void run_cache(T* inp, U* input_seen, unsigned long index){
   auto finder = input_seen->Map.find(*inp);
   if(finder != input_seen->Map.end()){
-    if (index == 130) cout << finder->second << endl;
-    struct time_block new_block = {finder->second, index+1, 1};
+    struct time_block new_block = {finder->second, index, 1};
     insert_time_slot<U>(new_block, input_seen);
-    input_seen->Map[*inp] = index+1;
   }
-  else input_seen->Map[*inp] = index;
+  input_seen->Map[*inp] = index;
 }
 
 void pPrintBlock(struct time_block b){

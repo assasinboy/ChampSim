@@ -1,20 +1,2 @@
-000 (1054685.000.000) 11/10 14:36:26 Job submitted from host: <129.105.44.178:9618?addrs=129.105.44.178-9618+[2620-10d-2011-2010-1618-77ff-fe53-1b5c]-9618&noUDP&sock=33817_3a4a_4>
-...
-001 (1054685.000.000) 11/10 14:36:48 Job executing on host: <129.105.44.176:9618?addrs=129.105.44.176-9618+[2620-10d-2011-2010-b283-feff-fec2-8a65]-9618&noUDP&sock=3387764_e67d_3>
-...
-006 (1054685.000.000) 11/10 14:36:56 Image size of job updated: 21260
-	19  -  MemoryUsage of job (MB)
-	19412  -  ResidentSetSize of job (KB)
-...
-006 (1054685.000.000) 11/10 14:41:56 Image size of job updated: 42860
-	41  -  MemoryUsage of job (MB)
-	41012  -  ResidentSetSize of job (KB)
-...
-006 (1054685.000.000) 11/10 14:46:56 Image size of job updated: 47208
-	45  -  MemoryUsage of job (MB)
-	45360  -  ResidentSetSize of job (KB)
-...
-006 (1054685.000.000) 11/10 14:51:57 Image size of job updated: 54456
-	52  -  MemoryUsage of job (MB)
-	52608  -  ResidentSetSize of job (KB)
+000 (1054689.000.000) 11/10 17:56:41 Job submitted from host: <129.105.44.178:9618?addrs=129.105.44.178-9618+[2620-10d-2011-2010-1618-77ff-fe53-1b5c]-9618&noUDP&sock=33817_3a4a_4>
 ...
