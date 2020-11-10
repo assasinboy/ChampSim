@@ -880,7 +880,15 @@ int main(int argc, char** argv)
                 //printf("here1\n");
                 warmup_complete[i] = 1;
                 all_warmup_complete++;
+
+                //******* CALL A CLEAR STATS FUNCTION HERE TO CLEAR THE HITS IN THE LLC CACHE *******
+                //uncore.LLC.CACHE::llc_clear_stats();
             }
+            //
+
+                
+
+            //
             //printf("warmup_complete %d\n",all_warmup_complete);
             if (all_warmup_complete == NUM_CPUS) { // this part is called only once when all cores are warmed up
                 all_warmup_complete++;

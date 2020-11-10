@@ -22,6 +22,7 @@
 #include <iterator>
 #include <getopt.h>
 #include "cache.h"
+#include "ooo_cpu.h"
 
 using namespace std;
 
@@ -58,7 +59,7 @@ public:
 };
 
 int x=0;
-unsigned int c_size = 16;
+unsigned int c_size = 16*2048;
 void* input_seen;
 int size_data=0;
 bool prune = false;
@@ -156,11 +157,8 @@ void insert_time_slot(time_block block, T* input_seen){
   while (cache[index].start_time < fill_point) index += 1; 
   found_split =  block.start_time < cache[index].start_time; // 1 when block start time before cache start time
   while( index < cache.size() + offset ){
-   
     if ( found_split ) {  
-    //  printf("cache[index].lines_filled1  %d\n", cache[index].lines_filled);
       cache[index].lines_filled++;
-    //  printf("cache[index].lines_filled2  %d\n", cache[index].lines_filled);
     } // already found split and just add 1 to the rest of the vector
     else if ( block.start_time == cache[index].end_time ) {  
       found_split = true; } // don't split block, just continue
@@ -170,16 +168,15 @@ void insert_time_slot(time_block block, T* input_seen){
       assert(new_block.lines_filled <= c_size);
       cache.insert(cache.begin()+index+1, new_block);
       cache[index].end_time = block.start_time;
-      index++; offset++;
+      index++; //offset++;
     }
-  
     assert(cache[index].lines_filled <= c_size);
     if (cache[index].lines_filled == c_size) {
       fill_point = cache[index].end_time;
       if (find(fill_points.begin(), fill_points.end(), fill_point) == fill_points.end()) {
-	if (!fill_captured) fill_captured = true;
+  if (!fill_captured) fill_captured = true;
         else fill_points.pop_back();
-	fill_points.push_back(fill_point);
+  fill_points.push_back(fill_point);
       }
       prune_needed = true;
     }
@@ -201,7 +198,7 @@ void coalesce(){
   size_t index = 0;
   while ( index < cache.size()-1 ){
     if ( cache[index].lines_filled == cache[index+1].lines_filled &&
-	 cache[index].end_time == cache[index+1].start_time+1){
+   cache[index].end_time == cache[index+1].start_time+1){
       cache[index].end_time = cache[index+1].end_time;
       cache.erase(cache.begin()+index+1);
     }
@@ -217,9 +214,6 @@ void coalesce(){
 template <class T, class U>  
 void run_cache(T* inp, U* input_seen, unsigned long index){
   auto finder = input_seen->Map.find(*inp);
- // if (num_inputs % 10 == 0) {
-
- // }
   if(finder != input_seen->Map.end()){
     if (index == 130) cout << finder->second << endl;
     struct time_block new_block = {finder->second, index+1, 1};
@@ -254,11 +248,17 @@ void CACHE::llc_replacement_final_stats(int num_inputs){
     num_fills++;
     }
   cout << endl;
-  cout<<"Input Size: "<<num_inputs<<endl;
-  cout << "Cache size: " << c_size<<endl;
-  cout<<"Hit Count: "<<hit_count<<endl;
-  cout << "Cache filled " << fill_points.size() << " times." << endl; 
+  cout<<"Number of LLC accesses : "<<num_inputs<<endl;
+  cout << "LLC Cache size: " << c_size<<endl;
+  cout<<"LLC Hit Count: "<<hit_count<<endl;
+  cout << "LLC Cache lines filled " << fill_points.size() << " times." << endl; 
 }
+
+void CACHE::llc_clear_stats() {
+  hit_count = 0;
+  num_inputs = 0;
+}
+
 
 
 static void usage (char * prog)
@@ -290,6 +290,7 @@ void CACHE::initialize(uint64_t entry) {
  // llc_replacement_final_stats(num_inputs);
 
   readInput<trace,traceMap>(entry, input_seen, num_inputs);
+  //only if were done with warmup
   num_inputs++;
   }
 

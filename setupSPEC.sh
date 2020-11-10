@@ -11,12 +11,12 @@ benchmark_dir="${root_dir}/runTraces"
 
 
 workload=$1
-run_command="./run_champsim.sh bimodal-no-no-no-no-perfect_cache-1core 5 50 "
+run_command="./run_champsim.sh bimodal-no-no-no-no-perfect_cache-1core 5 50"
 run_dir="/nfs-scratch/usk6037/ChampSim"
 rm -rf ${benchmark_dir}
 mkdir ${benchmark_dir}
 
-for benchmark in lbm_94B sphinx3_883B # tonto_422B calculix_2655B
+for benchmark in lbm_94B sphinx3_883B tonto_422B calculix_2655B
 do
 	echo ${benchmark}
 	mkdir ${benchmark_dir}/${benchmark}

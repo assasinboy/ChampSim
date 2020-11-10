@@ -1,10 +1,7 @@
-prefetcher/l1i_prefetcher.cc
-prefetcher/l1d_prefetcher.cc
-prefetcher/l2c_prefetcher.cc
-prefetcher/llc_prefetcher.cc
-branch/branch_predictor.cc
-replacement/llc_replacement.cc
-
+traces/
+results_50M/
+results_25M/
+results_1M/
 inc/champsim.h.bak
 
 bin/
