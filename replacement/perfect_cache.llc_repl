@@ -186,30 +186,38 @@ int handle_first(time_block block, int index) {
   //   block start after cache block end  (UNAFFECTED/COALESCE)
   if ( block.start_time < cache[index].end_time ) {
     struct time_block new_block;
-    if ( index == cache.size()-1 ) {
-      new_block = {block.start_time, cache[index].end_time, cache[index].lines_filled+1};
-      cache.push_back(new_block);
+    if ( block.start_time < cache[index].start_time ) {
+      new_block = {block.start_time, cache[index].start_time-1, 1};
+      cache.insert(cache.begin()+index, new_block);
+      index++;
       assert(new_block.lines_filled <= c_size);
+      return index;
     }
     else {
-      new_block = {block.start_time, cache[index+1].start_time-1, cache[index].lines_filled+1};
-      cache[index].end_time = block.start_time-1;
-      cache.insert(cache.begin()+index+1, new_block);
+      if ( index == cache.size()-1 ) {
+        new_block = {block.start_time, cache[index].end_time, cache[index].lines_filled+1};
+        cache.push_back(new_block);
+        assert(new_block.lines_filled <= c_size);
+      }
+      else {
+        new_block = {block.start_time, cache[index+1].start_time-1, cache[index].lines_filled+1};
+        cache[index].end_time = block.start_time-1;
+        cache.insert(cache.begin()+index+1, new_block);
+        assert(new_block.lines_filled <= c_size);
+      }
+      if ( cache[index+1].lines_filled == c_size ) {
+        prune_needed = true;
+	fill_point = cache[index+1].end_time;
+      }
       assert(new_block.lines_filled <= c_size);
+      return index+2; // skipping index and the block that just inserted (lines_filled already find);
     }
-    if ( cache[index+1].lines_filled == c_size ) {
-      prune_needed = true;
-      fill_point = cache[index+1].end_time;
-    }
-    assert(new_block.lines_filled <= c_size);
-    return index+2; // skipping index and the block that just inserted (lines_filled already find);
   }
-
   else if ( block.start_time == cache[index].end_time ) {
     if ( !(index == cache.size()-1) ) {
       cache[index].end_time = cache[index+1].start_time - 1;
       return index+1;
-    } 
+    }
   }
 
   else {
@@ -218,7 +226,7 @@ int handle_first(time_block block, int index) {
       struct time_block new_block = {block.start_time, cache[index+1].start_time-1, 1};
       cache.insert(cache.begin()+index+1, new_block);
       return index+2;
-    } 
+    }
   }
   if ( index == cache.size()-1 ) cache[index].lines_filled -= 1;
   return index;
@@ -354,11 +362,11 @@ void readInput(uint64_t entry,void* input_seen ,int num_inputs){
 }
 
 void CACHE::initialize(uint64_t entry) {
-  //cout << entry << endl;
+ // cout << entry << endl;
  // printf("My int is 0x%x\n",entry);
  // if (num_inputs % 12 == 0) 
  // llc_replacement_final_stats(num_inputs);
-
+  prune = false;
   readInput<trace,traceMap>(entry, input_seen, num_inputs);
   //only if were done with warmup
   num_inputs++;
